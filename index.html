@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roshan EMI Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [salary, setSalary] = useState(0);
+      const [emis, setEmis] = useState([]);
+      const [emiName, setEmiName] = useState("");
+      const [emiAmount, setEmiAmount] = useState("");
+      const [emiMonths, setEmiMonths] = useState("");
+
+      useEffect(() => {
+        const saved = JSON.parse(localStorage.getItem("emiData"));
+        if (saved) {
+          setSalary(saved.salary || 0);
+          setEmis(saved.emis || []);
+        }
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem("emiData", JSON.stringify({ salary, emis }));
+      }, [salary, emis]);
+
+      const addEmi = () => {
+        if (!emiName || !emiAmount || !emiMonths) return;
+        setEmis([...emis, {
+          name: emiName,
+          amount: Number(emiAmount),
+          months: Number(emiMonths)
+        }]);
+        setEmiName("");
+        setEmiAmount("");
+        setEmiMonths("");
+      };
+
+      const deleteEmi = (i) => {
+        setEmis(emis.filter((_, index) => index !== i));
+      };
+
+      const totalEmi = emis.reduce((s, e) => s + e.amount, 0);
+      const emiPercent = salary > 0 ? ((totalEmi / salary) * 100).toFixed(1) : 0;
+
+      let status = "SAFE";
+      if (emiPercent > 55) status = "DANGER";
+      else if (emiPercent > 40) status = "RISK";
+
+      const savings = salary > totalEmi ? Math.round((salary - totalEmi) * 0.2) : 0;
+
+      return (
+        <div style={{ maxWidth: 400, margin: "auto", fontFamily: "Arial" }}>
+          <h2 style={{ textAlign: "center" }}>Roshan EMI Manager</h2>
+
+          <input placeholder="Monthly Salary" type="number"
+            value={salary}
+            onChange={e => setSalary(+e.target.value)}
+            style={{ width: "100%", marginBottom: 8 }} />
+
+          <h3>Add EMI</h3>
+          <input placeholder="EMI Name"
+            value={emiName}
+            onChange={e => setEmiName(e.target.value)}
+            style={{ width: "100%", marginBottom: 5 }} />
+
+          <input placeholder="EMI Amount" type="number"
+            value={emiAmount}
+            onChange={e => setEmiAmount(e.target.value)}
+            style={{ width: "100%", marginBottom: 5 }} />
+
+          <input placeholder="Months Left" type="number"
+            value={emiMonths}
+            onChange={e => setEmiMonths(e.target.value)}
+            style={{ width: "100%", marginBottom: 10 }} />
+
+          <button onClick={addEmi} style={{ width: "100%" }}>Add EMI</button>
+
+          <h3>Your EMIs</h3>
+          {emis.map((e, i) => (
+            <div key={i} style={{ border: "1px solid #ccc", padding: 6 }}>
+              <b>{e.name}</b><br />
+              ₹{e.amount} | ⏳ {e.months} months<br />
+              <button onClick={() => deleteEmi(i)}>Delete</button>
+            </div>
+          ))}
+
+          <hr />
+          <p>Total EMI: ₹{totalEmi}</p>
+          <p>EMI %: {emiPercent}%</p>
+          <p>Status: {status}</p>
+          <p>Suggested Savings: ₹{savings}</p>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
